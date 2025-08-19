@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Happy Birthday Sandeep Sir</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background: black;
+      color: white;
+      font-family: "Times New Roman", serif;
+      font-style: italic;
+      text-align: center;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      position: fixed;
+      top: 0;
+      left: 0;
+      z-index: 0;
+    }
+    .header {
+      font-size: 40px;
+      font-weight: bold;
+      margin-top: 1.5cm; /* moved 0.5cm up (was 2cm) */
+      text-shadow: 0 0 10px #ff6a00, 0 0 20px #ff6a00;
+      position: relative;
+      z-index: 2;
+    }
+    .popup {
+      max-width: 600px;
+      margin: 1cm auto; /* moved 0.5cm up (was 1.5cm) */
+      border-radius: 20px;
+      background: black;
+      box-shadow: 0 8px 30px rgba(255,255,255,0.2);
+      padding: 30px;
+      color: white;
+      text-align: center;
+      position: relative;
+      z-index: 2;
+    }
+    .popup img {
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      border: 4px solid white;
+      margin-bottom: 20px;
+      box-shadow: 0 0 15px rgba(255,255,255,0.8);
+    }
+    .popup h2, .popup p, .popup h3 {
+      color: white;
+    }
+    .popup p {
+      font-size: 16px;
+      line-height: 1.6;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Fireworks Background -->
+  <canvas id="birthday"></canvas>
+
+  <!-- Title -->
+  <div class="header">🎂 Happy Birthday Sandeep Sir 🎉</div>
+
+  <!-- Popup Window -->
+  <div class="popup">
+    <img src="sir.jpg" alt="Sandeep Sir">
+    <h2>Dear Sandeep Sir,</h2>
+    <p>
+      On this special day, I wish you endless happiness, good health, and success. 
+      Your teachings and encouragement have shaped my journey, and I feel truly blessed to be your student.
+    </p>
+    <p>
+      May your birthday be filled with joy, laughter, and the love of everyone around you. 🎉
+    </p>
+    <h3>
+      With gratitude,<br>
+      Your Student
+    </h3>
+    <h3>
+     <b>— Swaroop Patnaik —</b>
+    </h3>
+  </div>
+
+  <!-- Fireworks Script -->
+  <script>
+    const PI2 = Math.PI * 2;
+    const random = (min, max) => Math.random() * (max - min + 1) + min | 0;
+    const timestamp = _ => new Date().getTime();
+
+    class Birthday {
+      constructor() {
+        this.resize();
+        this.fireworks = [];
+        this.counter = 0;
+      }
+      resize() {
+        this.width = canvas.width = window.innerWidth;
+        let center = this.width / 2 | 0;
+        this.spawnA = center - center / 4 | 0;
+        this.spawnB = center + center / 4 | 0;
+        this.height = canvas.height = window.innerHeight;
+        this.spawnC = this.height * .1;
+        this.spawnD = this.height * .5;
+      }
+      onClick(evt) {
+        let x = evt.clientX || evt.touches && evt.touches[0].pageX;
+        let y = evt.clientY || evt.touches[0].pageY;
+        let count = random(3,5);
+        for(let i = 0; i < count; i++) this.fireworks.push(new Firework(
+          random(this.spawnA, this.spawnB),
+          this.height,
+          x, y,
+          random(0, 260),
+          random(30, 110)));
+        this.counter = -1;
+      }
+      update(delta) {
+        ctx.globalCompositeOperation = 'hard-light';
+        ctx.fillStyle = `rgba(20,20,20,${ 7 * delta })`;
+        ctx.fillRect(0, 0, this.width, this.height);
+        ctx.globalCompositeOperation = 'lighter';
+        for (let firework of this.fireworks) firework.update(delta);
+        this.counter += delta * 3;
+        if (this.counter >= 1) {
+          this.fireworks.push(new Firework(
+            random(this.spawnA, this.spawnB),
+            this.height,
+            random(0, this.width),
+            random(this.spawnC, this.spawnD),
+            random(0, 360),
+            random(30, 110)));
+          this.counter = 0;
+        }
+        if (this.fireworks.length > 1000) 
+          this.fireworks = this.fireworks.filter(firework => !firework.dead);
+      }
+    }
+
+    class Firework {
+      constructor(x, y, targetX, targetY, shade, offsprings) {
+        this.dead = false;
+        this.offsprings = offsprings;
+        this.x = x; this.y = y;
+        this.targetX = targetX; this.targetY = targetY;
+        this.shade = shade;
+        this.history = [];
+      }
+      update(delta) {
+        if (this.dead) return;
+        let xDiff = this.targetX - this.x;
+        let yDiff = this.targetY - this.y;
+        if (Math.abs(xDiff) > 3 || Math.abs(yDiff) > 3) {
+          this.x += xDiff * 2 * delta;
+          this.y += yDiff * 2 * delta;
+          this.history.push({ x: this.x, y: this.y });
+          if (this.history.length > 20) this.history.shift();
+        } else {
+          if (this.offsprings && !this.madeChilds) {
+            let babies = this.offsprings / 2;
+            for (let i = 0; i < babies; i++) {
+              let targetX = this.x + this.offsprings * Math.cos(PI2 * i / babies) | 0;
+              let targetY = this.y + this.offsprings * Math.sin(PI2 * i / babies) | 0;
+              birthday.fireworks.push(new Firework(this.x, this.y, targetX, targetY, this.shade, 0));
+            }
+          }
+          this.madeChilds = true;
+          this.history.shift();
+        }
+        if (this.history.length === 0) this.dead = true;
+        else if (this.offsprings) {
+          for (let i = 0; this.history.length > i; i++) {
+            let point = this.history[i];
+            ctx.beginPath();
+            ctx.fillStyle = 'hsl(' + this.shade + ',100%,' + i + '%)';
+            ctx.arc(point.x, point.y, 1, 0, PI2, false);
+            ctx.fill();
+          }
+        } else {
+          ctx.beginPath();
+          ctx.fillStyle = 'hsl(' + this.shade + ',100%,50%)';
+          ctx.arc(this.x, this.y, 1, 0, PI2, false);
+          ctx.fill();
+        }
+      }
+    }
+
+    let canvas = document.getElementById('birthday');
+    let ctx = canvas.getContext('2d');
+    let then = timestamp();
+    let birthday = new Birthday;
+    window.onresize = () => birthday.resize();
+    document.onclick = evt => birthday.onClick(evt);
+    document.ontouchstart = evt => birthday.onClick(evt);
+
+    (function loop(){
+      requestAnimationFrame(loop);
+      let now = timestamp();
+      let delta = now - then;
+      then = now;
+      birthday.update(delta / 1000);
+    })();
+  </script>
+</body>
+</html>
